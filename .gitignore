@@ -1,7 +1,7 @@
 # ignore all files in the following folders
-log/
+logs/
 .ipynb_checkpoints/
-.__pycache__/git 
+__pycache__/
 
 # ignore all .bak .dat and .dir files
 *.bak
