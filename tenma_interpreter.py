@@ -185,7 +185,7 @@ class TenmaMeterSerialMsgs():
             return 'Z4 Off'
 
     def get_tenma_722610_msg_header(self):
-        output_file_header = f"Time,Mode,Display Value,Display Unit,Actual Value,Actual Unit,AD/DC,Reading Type,Hold,Meter State,Bar Graph State,Bar Graph Value,Z1,Z2,Z2,Z4"
+        output_file_header = f"Time,Timestamp,Mode,OL,Display Value,Display Unit,Actual Value,Actual Unit,AD/DC,Reading Type,Hold,Meter State,Bar Graph State,Bar Graph Value,Z1,Z2,Z3,Z4"
         return output_file_header
 
     def interpret_tenma_722610_msg(self, msg_rec):
@@ -212,6 +212,7 @@ class TenmaMeterSerialMsgs():
         enter = msg_rec[13]
 
         time_now = datetime.datetime.now().isoformat()
+        timestamp = datetime.datetime.now().timestamp()
         mode = self.get_mode()
         disp_value = value
         display_unit = self.get_scale_prefix() + self.get_unit()
@@ -232,6 +233,7 @@ class TenmaMeterSerialMsgs():
         Z4_state = self.get_user_symbol_Z4()
 
         dict_out = {'Time':time_now,
+            'Timestamp':timestamp,
             'Mode':mode,
             'OL': b_OL,
             'Display Value':disp_value,
@@ -253,7 +255,7 @@ class TenmaMeterSerialMsgs():
         return dict_out
 
     def get_log_line_from_tenma_message(self, msg_in):
-        log_line = f"{msg_in['Time']},{msg_in['Mode']},{msg_in['OL']},{msg_in['Display Value']},{msg_in['Display Unit']},{msg_in['Actual Value']},{msg_in['Actual Unit']},{msg_in['AD/DC']},{msg_in['Reading Type']},{msg_in['Hold']},{msg_in['Meter State']},{msg_in['Bar Graph State']},{msg_in['Bar Graph Value']},{msg_in['Z1']},{msg_in['Z2']},{msg_in['Z3']},{msg_in['Z4']}"
+        log_line = f"{msg_in['Time']},{msg_in['Timestamp']},{msg_in['Mode']},{msg_in['OL']},{msg_in['Display Value']},{msg_in['Display Unit']},{msg_in['Actual Value']},{msg_in['Actual Unit']},{msg_in['AD/DC']},{msg_in['Reading Type']},{msg_in['Hold']},{msg_in['Meter State']},{msg_in['Bar Graph State']},{msg_in['Bar Graph Value']},{msg_in['Z1']},{msg_in['Z2']},{msg_in['Z3']},{msg_in['Z4']}"
         return log_line
 
         # # reading output line

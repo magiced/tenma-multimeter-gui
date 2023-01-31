@@ -6,6 +6,8 @@ from matplotlib.figure import Figure
 import tkinter as Tk
 import tkinter.ttk as ttk
 import random
+import time
+import easyfiledialogs
 
 # https://matplotlib.org/stable/api/backend_tk_api.html#matplotlib.backends.backend_tkagg.FigureCanvasTkAgg
 """
@@ -32,6 +34,32 @@ TODO
 * [ ] reset graph function    
 """
 
+# class GraphSeries(series_name=''):
+#     def __init__(self):
+#         self.x_data = []
+#         self.y_data = []
+#         self.name = self.series_name
+
+#     def add_value(self, x_val, y_val):
+#         self.x_data.append(x_val)
+#         self.y_data.append(y_val)
+
+#     def clear_series(self):
+#         self.x_data = []
+#         self.y_data = []
+
+#     def get_series_name(self):
+#         return self.name
+    
+"""
+other functions
+pop
+len (is there a way of doing a proper len? don't make your life difficult ed...
+set_max_width
+change max width
+
+"""
+
 
 class tkGraph(Tk.Frame):
     def __init__(self,parent, **kwargs, ):
@@ -40,16 +68,28 @@ class tkGraph(Tk.Frame):
         self.x_data = []
         self.y_data = []
 
+        self.max_y_value = 0
+        self.min_y_value = 0
+        self.max_x_value = 0
+        self.min_x_value = 0
+
         self.traces = dict()
         self.b_running = True
 
         self.not_new_line = False
+
+        self.autoscale_y_on = False
+        self.autoscale_x_on = False
 
         # Define matplotlib figure
         self.fig = Figure(figsize=(5,4), dpi=100)
         self.ax = self.fig.add_subplot(111)
         self.fig.set_tight_layout(True)
         self.ax.autoscale(tight=False)
+        # self.ax.set_ylim(34,46)
+        
+        # self.ax.set_xlim()
+
         # self.ax.legend()
 
         # Tell Tkinter to display matplotlib figure
@@ -90,8 +130,7 @@ class tkGraph(Tk.Frame):
     """ Graph use methods """
 
     def reset_graph(self):
-        # redraw graph from start with new titles and axes
-        pass
+        self.reset_y_max_min()
 
     def toggle_graph(self):
         """ toggles the graph running bool """
@@ -113,14 +152,14 @@ class tkGraph(Tk.Frame):
         self.b_running = False
         """ if graph is running, stop it where it is, but keep the data """
 
-    def save_graph(self):
+    def save_graph(self,filename):
         """ opens a filedialog to choose a save place and filename, and then saves
         a png of the graph """
         # self.pause_graph()
 
         # # get filename using my save dialog library
         # filename = './savetest.png'
-        # self.fig.savefig(filename, dpi=200)# use fig save f.savefig(filename.parent / (filename.stem +  '.png'),dpi=200)
+        self.fig.savefig(filename, dpi=200) # use fig save f.savefig(filename.parent / (filename.stem +  '.png'),dpi=200)
         # self.start_graph()
         pass
 
@@ -129,6 +168,18 @@ class tkGraph(Tk.Frame):
         amount of data displayed on the graph """
         self.x_width = width
         pass
+
+    def set_autoscale_y_on(self):
+        self.autoscale_y_on = True
+
+    def set_autoscale_y_off(self):
+        self.autoscale_y_on = False
+    
+    def set_autoscale_x_on(self):
+        self.autoscale_x_on = True
+
+    def set_autoscale_x_off(self):
+        self.autoscale_x_on = False
 
     """ Methods for setting data """
 
@@ -149,7 +200,11 @@ class tkGraph(Tk.Frame):
         if self.b_running:
             if self.not_new_line: # if it's not a new line
                 self.line.set_data(dataset_x,dataset_y)
-                self.ax.autoscale(True, tight=False) # rescales the graph each time to make sure that
+                self.update_y_max_min(dataset_y)                
+                self.ax.set_ylim(self.min_y_value - abs(0.2*self.min_y_value), self.max_y_value + 0.2*self.max_y_value) # don't need to resize x axis, as this is controlled by the dataset width
+                self.ax.axes.relim() # redraws the axes to account for any change in limits
+                self.ax.autoscale_view()
+
             else: # if it is a new line
                 self.not_new_line = True
                 self.line, = self.ax.plot(dataset_x,dataset_y) # draw the new line
@@ -160,6 +215,42 @@ class tkGraph(Tk.Frame):
         graph_update_timer method"""
         self.x_data = x_data
         self.y_data = y_data
+
+    def update_y_max_min(self, this_y_data):
+        # update max y
+        if len(this_y_data) > 2:
+            # print('update')
+            if (max(this_y_data) > self.max_y_value):
+                # print('max update')
+                self.max_y_value = max(this_y_data)
+
+            if (min(this_y_data) < self.min_y_value):
+                # print('min update')
+                self.min_y_value = min(this_y_data)
+
+        elif len(this_y_data) <= 2:
+            # print('set')
+            self.max_y_value = this_y_data[0]
+            self.min_y_value = this_y_data[0]
+        # else:
+        #     print('pass')
+        #     pass
+
+        # print(f'max x: {self.max_y_value}, min x: {self.min_y_value}, {max(this_y_data)}, {min(this_y_data)}')  
+        # 
+    def reset_y_max_min(self):
+        self.max_y_value = self.min_y_value      # note, this is a dirty hack until i rearrrange how the library handles data 
+
+    def update_x_max_min(self):
+        # update max x vals
+        if (len(self.x_data) > 0):
+            if max(self.x_data) > self.max_x_value:
+                self.max_x_value = max(self.x_data)
+
+            if min(self.x_data) < self.min_x_value:
+                self.min_x_value = min(self.x_data)
+        else:
+            pass
     
     def graph_update_timer(self, update_period):
         """ periodically updates the graph using the data set seperately"""
@@ -196,18 +287,19 @@ if __name__=="__main__":
         global sin_data
 
         phase, sin_data = create_sin_curve(phase)
-        rand_x, rand_y = create_random_test_data(10)
-        plot.set_graph_data(sin_data[0], sin_data[1])
-        plotB.set_graph_data(rand_x, rand_y)
+        rand_x, rand_y = create_random_test_data(10, min=-1000, max=1000)
 
-        # changes background color based on max value, for an alert
-        if max(rand_y) >= 10:
-            plotB.set_bg_color('red')
-            print('RED')
-        else:
-            plotB.set_bg_color('green')
-        # plot.update_graph(sin_data[0], sin_data[1])
-        # plotB.update_graph(rand_x, rand_y)
+        plot.set_graph_data(rand_x, rand_y) #.set_graph_data(sin_data[0], sin_data[1])
+        # plotB.set_graph_data(rand_x, rand_y)
+
+        # # changes background color based on max value, for an alert
+        # if max(rand_y) >= 10:
+        #     plotB.set_bg_color('red')
+        #     print('RED')
+        # else:
+        #     plotB.set_bg_color('green')
+        # # plot.update_graph(sin_data[0], sin_data[1])
+        # # plotB.update_graph(rand_x, rand_y)
 
         root.after(50, main_loop)
 
@@ -215,20 +307,20 @@ if __name__=="__main__":
     root = Tk.Tk()
 
     plot = tkGraph(root)
-    plotB = tkGraph(root)
+    # plotB = tkGraph(root)
     plot.set_xlabel('time')
 
-    plotB.set_title('random line')
-    plotB.set_ylabel('RANDOM')
+    # plotB.set_title('random line')
+    # plotB.set_ylabel('RANDOM')
     # plotB.set_color('red')
     plot.set_grid_lines(color='navy', axis='x')
-    plotB.set_grid_lines(color='black', axis='y')
+    # plotB.set_grid_lines(color='black', axis='y')
         
     button1 = Tk.Button(root,text='PAUSE', command=pause_button_clicked)
     button2 = Tk.Button(root, text='START')#, command=plot.start_graph)
     
     plot.grid(row=0,column=0)
-    plotB.grid(row=1,column=0)
+    # plotB.grid(row=1,column=0)
     button1.grid(row=0,column=1)
     button2.grid(row=1,column=1)
     
@@ -240,6 +332,6 @@ if __name__=="__main__":
 
     main_loop()
     plot.graph_update_timer(200)
-    plotB.graph_update_timer(200)
+    # plotB.graph_update_timer(200)
 
     root.mainloop()

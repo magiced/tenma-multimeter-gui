@@ -1,0 +1,3 @@
+10252 - root - WARNING - this will get logged to a file
+10252 - example_logger - WARNING - this is a warning
+10252 - example_logger - WARNING - this is a warning
