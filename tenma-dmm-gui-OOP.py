@@ -4,32 +4,30 @@ import serial
 import serial.tools.list_ports
 import time
 import traceback
-import datetime
-import shelve
+# import datetime
+# import shelve
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import scrolledtext
-from tkinter import filedialog
-# from os import path
-import shelve
-from pathlib import Path
+# from tkinter import filedialog
+# import shelve
+# from pathlib import Path
 import traceback
-# import plotCSV
-
-from matplotlib.backends.backend_tkagg import (
-    FigureCanvasTkAgg, NavigationToolbar2Tk)
-# Implement the default Matplotlib key bindings.
-# from matplotlib.backend_bases import key_press_handler
-# from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import numpy as np
+# from matplotlib.backends.backend_tkagg import (
+#     FigureCanvasTkAgg, NavigationToolbar2Tk)
+# # Implement the default Matplotlib key bindings.
+# # from matplotlib.backend_bases import key_press_handler
+# # from matplotlib.figure import Figure
+# import matplotlib.pyplot as plt
+# import matplotlib.animation as animation
+# import numpy as np
 
 # my libraries
 from easyfiledialogs import get_path_to_save_file
 import tenma_interpreter
 import tkgraph
 import tkLED
+import plotTenmaLog
 
 def get_datetime_string():
     return time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
@@ -60,8 +58,10 @@ def write_header_to_log(log_filename, header_string):
     write_line_to_log(log_filename, header_string)    
 
 def stop_log(log_filename):
+    global last_log_filename
     out_text = f"Logging Stopped"
     print(out_text)
+    last_log_filename = log_filename
     log_filename = None
     # textbox.insert('end',out_text + '\n')
     return None
@@ -183,6 +183,11 @@ def set_tenma_serial_settings():
     ser.setRTS(False) # required for tenma meters, as these lines power the optical reciever circuit
     ser.setDTR(True) 
 
+def quit():
+    print("QUITTING...")
+    ser.close()
+    window.destroy()
+
 # todo, oop this
 # create tenma object
 def main_program_loop():
@@ -212,7 +217,6 @@ def main_program_loop():
                     # should be y data only, or x should be elapsed time
                     # if y data only could use generator to create x coords based on y length
                     # print(len(x_coords))
-                    # y_coords.append(meter_msg['Actual Value'])
                     y_coords.append(meter_msg['Display Value']) # append the read value to the coordinate data list
                     if (len(x_coords) > 0):
                         x_coords.append(x_coords[-1] + 1) # add the next value to the x_coords, note that this should probably be elapsed time
@@ -272,6 +276,14 @@ def save_graph():
     print(f"Saving logfile as {graph_filename}...")
     graph.save_graph(graph_filename)
 
+def plot_last_log():
+    global last_log_filename
+    if (last_log_filename == None):
+        print('no last log')
+        pass
+    else:
+        plotTenmaLog.plot_tenma_logfile(last_log_filename)
+
 """ DEFINE GUI WIDGETS """
 
 tenma = tenma_interpreter.TenmaMeterSerialMsgs()
@@ -308,7 +320,8 @@ cbo_graph_width.current(0)
 btn_open = tk.Button(window, text='CONNECT',command=open_close_port)
 
 textbox = tk.scrolledtext.ScrolledText(window, width=50, height=4)
-btn_graph_on = tk.Button(window, text='START GRAPH')#, command=toggle_graphing)
+# btn_graph_on = tk.Button(window, text='START GRAPH')#, command=toggle_graphing)
+btn_plot_last_log = tk.Button(window, text='Plot Last Log', command=plot_last_log)
 
 tx_text = tk.Entry(window, width=30)
 tx_text.focus()
@@ -356,7 +369,7 @@ btn_log.grid(       row=3,  column=2) #sticky=tk.CENTER, padx=10)
 #btn_transmit.grid(  row=3,  column=2)
 
 # row 4
-btn_graph_on.grid(  row=4,  column=0, sticky=tk.NSEW)
+btn_plot_last_log.grid(  row=4,  column=0, sticky=tk.NSEW)
 lbl_graph_width.grid(  row=4,  column=1, sticky=tk.E)
 cbo_graph_width.grid(  row=4,  column=2)
 
@@ -397,6 +410,7 @@ b_graph_active = False
 b_logging = False
 last_b_logging = False
 log_file = None
+last_log_filename = None
 meter_msg = {}
 ser = serial.Serial()
 

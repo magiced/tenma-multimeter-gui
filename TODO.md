@@ -2,7 +2,6 @@
 
 * [ ] fix out of range issue - as with bms after press button
 * [ ] add fault logging
-* [ ] remove prints from library
 * [ ] format exception correctly
 * [ ] work on error handling in particular in main loop
 * [ ] remember last used serial port
@@ -12,6 +11,7 @@
 * [x] change plotted value to display value
 * [x] show unit on graph
 * [ ] when multimeter reading type changes, reset graph
+* [x] add plot log button that plots the last log 
 
 # TK graph library
 
